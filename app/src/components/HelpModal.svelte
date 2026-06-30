@@ -12,7 +12,7 @@
 
 
   // ── Web3Forms – get a free access key at web3forms.com (enter your email) ─
-  const WEB3FORMS_KEY = 'YOUR_ACCESS_KEY';
+  const WEB3FORMS_KEY = '0a2c23a1-bd22-487c-aa6f-17be612482ba';
 
   // ── Donate – replace with your real donate URL ────────────────────────────
   const DONATE_URL = 'https://buymeacoffee.com/YOUR_HANDLE';
