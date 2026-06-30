@@ -11,6 +11,9 @@
   type ServiceId = typeof SERVICES[number]['id'];
 
 
+  // ── Web3Forms – get a free access key at web3forms.com (enter your email) ─
+  const WEB3FORMS_KEY = 'YOUR_ACCESS_KEY';
+
   // ── Donate – replace with your real donate URL ────────────────────────────
   const DONATE_URL = 'https://buymeacoffee.com/YOUR_HANDLE';
 
@@ -86,10 +89,12 @@
     };
   }
 
-  async function post(fd: FormData, formName: string): Promise<boolean> {
-    fd.append('form-name', formName);
-    const res = await fetch('/', { method: 'POST', body: fd });
-    return res.ok;
+  async function post(fd: FormData, subject: string): Promise<boolean> {
+    fd.append('access_key', WEB3FORMS_KEY);
+    fd.append('subject',    subject);
+    const res  = await fetch('https://api.web3forms.com/submit', { method: 'POST', body: fd });
+    const json = await res.json();
+    return json.success === true;
   }
 
   async function submitQuote() {
@@ -103,7 +108,7 @@
     fd.append('total',       `$${total}`);
     if (qPhoto1) fd.append('photo_angle_1', qPhoto1, qPhoto1.name);
     if (qPhoto2) fd.append('photo_angle_2', qPhoto2, qPhoto2.name);
-    try   { qDone = await post(fd, 'quote'); if (!qDone) qErr = 'Submission failed — please try again.'; }
+    try   { qDone = await post(fd, 'New Quote Request'); if (!qDone) qErr = 'Submission failed — please try again.'; }
     catch { qErr = 'Network error — please check your connection.'; }
     finally { qBusy = false; }
   }
@@ -114,10 +119,9 @@
     const typeLabel = fType === 'feature' ? 'Feature Request' : fType === 'bug' ? 'Bug Report' : fType === 'compliment' ? 'Friendly Compliment' : 'Question';
     const fd = new FormData();
     fd.append('type',        typeLabel);
-    fd.append('subject',     fSubject);
     fd.append('description', fDesc);
     if (fShot) fd.append('screenshot', fShot, fShot.name);
-    try   { fDone = await post(fd, 'feedback'); if (!fDone) fErr = 'Submission failed — please try again.'; }
+    try   { fDone = await post(fd, `[${typeLabel}] ${fSubject}`); if (!fDone) fErr = 'Submission failed — please try again.'; }
     catch { fErr = 'Network error — please check your connection.'; }
     finally { fBusy = false; }
   }
