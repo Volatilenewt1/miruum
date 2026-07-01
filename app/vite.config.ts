@@ -9,4 +9,8 @@ export default defineConfig({
       defaultHandler!(warning);
     },
   })],
+  server: {
+    host: true,
+    allowedHosts: 'all',
+  },
 })

@@ -19,6 +19,70 @@
   let panOrig  = { x: 0, y: 0 };
   let t2Start: { d: number; scale: number; px: number; py: number; mx: number; my: number } | null = null;
 
+  // Single-finger touch: a tap (little/no movement) selects; a drag pans the
+  // canvas UNLESS it starts on the object that's already selected, in which
+  // case it moves that object instead. This keeps one-finger drag from being
+  // swallowed by hit-tests (e.g. the room, which covers most of the screen).
+  type TouchHit =
+    | { kind: 'handle'; id: number }
+    | { kind: 'wallEndpoint'; id: number }
+    | { kind: 'item'; id: number; isSel: boolean }
+    | { kind: 'opening'; id: number; isSel: boolean }
+    | { kind: 'wall'; id: number; isSel: boolean; locked: boolean }
+    | { kind: 'room'; id: number; isSel: boolean };
+  let touchStart: { x: number; y: number } | null = null;
+  let touchMoved = false;
+  let touchTarget: TouchHit | null = null;
+  let touchDragging = false;
+  const TAP_SLOP = 10;
+
+  function resolveTouchTarget(x: number, y: number): TouchHit | null {
+    const s = $appState;
+
+    if (s.selId !== null) {
+      const item = s.placed.find(p => p.id === s.selId);
+      if (item && hitHandles(item, x, y)) return { kind: 'handle', id: item.id };
+    }
+
+    for (let i = s.placed.length - 1; i >= 0; i--) {
+      const item = s.placed[i];
+      if (hitItem(item, x, y)) return { kind: 'item', id: item.id, isSel: item.id === s.selId };
+    }
+
+    for (let i = s.openings.length - 1; i >= 0; i--) {
+      const o = s.openings[i];
+      if (hitOpening(o, x, y)) return { kind: 'opening', id: o.id, isSel: o.id === s.selOId };
+    }
+
+    if (s.selWallId !== null) {
+      const sw = s.walls.find(w => w.id === s.selWallId);
+      if (sw && !sw.locked && hitWallEndpoint(sw, x, y) !== null) return { kind: 'wallEndpoint', id: sw.id };
+    }
+
+    for (let i = s.walls.length - 1; i >= 0; i--) {
+      const w = s.walls[i];
+      if (hitWall(w, x, y)) return { kind: 'wall', id: w.id, isSel: w.id === s.selWallId, locked: !!w.locked };
+    }
+
+    for (let i = s.rooms.length - 1; i >= 0; i--) {
+      const room = s.rooms[i];
+      if (hitRoom(room, x, y)) return { kind: 'room', id: room.id, isSel: s.roomPanelVisible && room.id === s.selRoomId };
+    }
+
+    return null;
+  }
+
+  function touchTargetDraggableNow(t: TouchHit | null): boolean {
+    if (!t) return false;
+    if (t.kind === 'handle' || t.kind === 'wallEndpoint') return true;
+    if (t.kind === 'wall') return t.isSel && !t.locked;
+    return t.isSel;
+  }
+
+  function resetTouchGesture(): void {
+    touchStart = null; touchTarget = null; touchMoved = false; touchDragging = false;
+  }
+
   onMount(() => {
     initRenderer(canvas);
 
@@ -391,14 +455,35 @@
   function onTouchStart(e: TouchEvent): void {
     e.preventDefault();
     if (e.touches.length === 2) {
+      if (touchDragging) onUp();
+      panning = false;
       const s = $appState;
       t2Start = { d: tDist(e), scale: s.scale, px: s.panX, py: s.panY,
         mx: (e.touches[0].clientX + e.touches[1].clientX) / 2,
         my: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
+      resetTouchGesture();
       return;
     }
+
     const t = e.touches[0];
-    onDown({ clientX: t.clientX, clientY: t.clientY, button: 0 } as MouseEvent);
+    const { x, y } = cpos(t);
+    touchStart = { x, y };
+    touchMoved = false;
+
+    if ($appState.mode === 'wall') { touchTarget = null; touchDragging = false; return; }
+
+    touchTarget = resolveTouchTarget(x, y);
+
+    if (touchTargetDraggableNow(touchTarget)) {
+      touchDragging = true;
+      onDown({ clientX: t.clientX, clientY: t.clientY, button: 0 } as MouseEvent);
+    } else {
+      touchDragging = false;
+      // Pre-arm panning so a drag can start the instant it clears the tap threshold,
+      // without a jump (the delta already accounts for movement since touch-down).
+      panStart = { x, y };
+      panOrig = { x: $appState.panX, y: $appState.panY };
+    }
   }
 
   function onTouchMove(e: TouchEvent): void {
@@ -413,12 +498,52 @@
       appState.update(s => ({ ...s, scale: ns, panX: mx - rx * ns, panY: my - ry * ns }));
       return;
     }
+
+    if ($appState.mode === 'wall' || !touchStart) return;
     const t = e.touches[0];
-    onMove({ clientX: t.clientX, clientY: t.clientY } as MouseEvent);
+
+    if (touchDragging) {
+      onMove({ clientX: t.clientX, clientY: t.clientY } as MouseEvent);
+      return;
+    }
+
+    if (!touchMoved) {
+      const { x, y } = cpos(t);
+      if (Math.hypot(x - touchStart.x, y - touchStart.y) > TAP_SLOP) {
+        touchMoved = true;
+        panning = true;
+      }
+    }
+    if (panning) onMove({ clientX: t.clientX, clientY: t.clientY } as MouseEvent);
   }
 
   function onTouchEnd(e: TouchEvent): void {
-    e.preventDefault(); t2Start = null; onUp();
+    e.preventDefault();
+    t2Start = null;
+
+    if ($appState.mode === 'wall') { resetTouchGesture(); return; }
+
+    if (touchDragging) {
+      onUp();
+    } else if (panning) {
+      panning = false;
+    } else if (touchStart && !touchMoved && touchTarget) {
+      const tt = touchTarget;
+      if (tt.kind === 'item') selItem(tt.id);
+      else if (tt.kind === 'opening') selOpening(tt.id);
+      else if (tt.kind === 'wall') selWall(tt.id);
+      else if (tt.kind === 'room') selRoom(tt.id);
+    } else if (touchStart && !touchMoved && !touchTarget) {
+      desel();
+    }
+
+    resetTouchGesture();
+  }
+
+  function onTouchCancel(): void {
+    t2Start = null;
+    if (touchDragging) onUp(); else panning = false;
+    resetTouchGesture();
   }
 
   // ── Cursor ──────────────────────────────────────────────────────
@@ -485,6 +610,7 @@
     on:touchstart={onTouchStart}
     on:touchmove={onTouchMove}
     on:touchend={onTouchEnd}
+    on:touchcancel={onTouchCancel}
   ></canvas>
 
   {#if hint}
