@@ -6,6 +6,10 @@
   import { fmtIn, toIn, snap } from '../lib/utils';
   import LibraryPanel from './LibraryPanel.svelte';
 
+  // Flagged logic change: new prop required so App.svelte can bind the hamburger state.
+  // Desktop ignores this prop — sidebar stays visible via CSS at ≥768px.
+  export let open = false;
+
   $: s = $appState;
   $: isFt = s.unit === 'ft';
 
@@ -29,7 +33,9 @@
   }
 </script>
 
-<aside class="sidebar">
+<aside class="sidebar" class:open>
+  <!-- Close button — hidden on desktop, visible on mobile -->
+  <button class="mob-close" on:click={() => (open = false)} aria-label="Close menu">&#x2715;</button>
 
   <!-- Units -->
   <div class="sec units-sec">
@@ -203,6 +209,63 @@
   }
   .sidebar::-webkit-scrollbar { width: 4px; }
   .sidebar::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+  /* ── Mobile close button (hidden on desktop) ───────────────────── */
+  .mob-close {
+    display: none;
+  }
+
+  /* ── Mobile drawer ─────────────────────────────────────────────── */
+  @media (max-width: 767px) {
+    .sidebar {
+      top: 0;
+      left: 0;
+      border-radius: 0 14px 14px 0;
+      max-height: 100vh;
+      width: min(288px, 85vw);
+      transform: translateX(calc(-100% - 20px));
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 100;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+    }
+    .mob-close {
+      display: flex;
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+      background: #fafafa;
+      font-size: 12px;
+      color: #888;
+      cursor: pointer;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .mob-close:hover { background: #f0f0f0; }
+    /* push first section down so it clears the close button */
+    .sidebar > :global(.sec:first-of-type) {
+      padding-top: 48px;
+    }
+    /* larger touch targets for all buttons inside sidebar on mobile */
+    button { min-height: 40px; }
+    button.sm { min-height: 32px; }
+    button.icon { min-height: 28px; }
+    .list-item { padding: 9px 4px; }
+    .utog button { min-height: 36px; }
+  }
+
+  @media (max-width: 479px) {
+    .sidebar {
+      width: min(300px, 90vw);
+    }
+  }
   .sec { padding: 14px 16px; border-bottom: 1px solid #f0f0f0; }
   .sec.lib-sec { flex: 1; min-height: 60px; }
   h3 { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #aaa; }

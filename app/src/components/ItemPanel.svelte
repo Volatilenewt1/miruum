@@ -170,6 +170,24 @@
     padding: 14px; box-shadow: 0 2px 14px rgba(0,0,0,.1); z-index: 20;
     overflow-y: auto; max-height: calc(100vh - 68px);
   }
+
+  @media (max-width: 767px) {
+    .panel {
+      right: 0; left: 0; bottom: 0; top: auto;
+      width: 100%; max-width: 100%;
+      border-radius: 16px 16px 0 0;
+      border: none; border-top: 1px solid #e0e0e0;
+      box-shadow: 0 -4px 24px rgba(0,0,0,.15);
+      max-height: 62vh;
+      padding: 16px 16px 24px;
+    }
+    h4 { font-size: 15px; }
+    button { min-height: 44px; }
+    button.sm { min-height: 32px; }
+    label { font-size: 13px; }
+    input[type=text], input[type=number] { font-size: 15px; padding: 9px; }
+    input[type=color] { height: 40px; }
+  }
   h4 { font-size: 13px; font-weight: 700; color: #222; margin-bottom: 6px; }
   label { display: block; font-size: 11px; color: #666; margin-bottom: 3px; margin-top: 8px; }
   label:first-of-type { margin-top: 0; }

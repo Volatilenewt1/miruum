@@ -147,6 +147,44 @@
     min-width: 190px;
     z-index: 30;
   }
+
+  /* ── Mobile toolbar ────────────────────────────────────────────── */
+  @media (max-width: 767px) {
+    .toolbar {
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: calc(100vw - 32px);
+      top: 16px;
+    }
+    .toolbar-row {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 4px;
+    }
+    button {
+      font-size: 12px;
+      padding: 8px 11px;
+      min-height: 40px;
+    }
+    .sep { display: none; }
+    .share-menu {
+      left: 50%;
+      transform: translateX(-50%);
+      right: auto;
+    }
+    .url-row { flex-wrap: wrap; }
+    .url-input { min-width: 0; flex: 1 1 120px; }
+  }
+
+  @media (max-width: 479px) {
+    .toolbar {
+      max-width: calc(100vw - 24px);
+    }
+    button {
+      padding: 7px 9px;
+      font-size: 11px;
+    }
+  }
   .share-menu button {
     display: flex;
     align-items: center;

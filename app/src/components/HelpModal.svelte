@@ -360,8 +360,9 @@
   /* ── Trigger button ────────────────────────────────────────────────────── */
   .help-btn {
     position: fixed;
-    top: 14px;
-    right: 14px;
+    bottom: 16px;
+    right: 16px;
+    top: auto;
     z-index: 100;
     padding: 8px 14px;
     background: #4a90e2;
@@ -375,10 +376,19 @@
     box-shadow: 0 2px 10px rgba(74,144,226,.35);
     transition: background .15s, box-shadow .15s;
     letter-spacing: .2px;
+    min-height: 36px;
   }
   .help-btn:hover {
     background: #2f78d6;
     box-shadow: 0 3px 14px rgba(74,144,226,.45);
+  }
+
+  /* ── Modal responsive tweaks ───────────────────────────────────────────── */
+  @media (max-width: 479px) {
+    .body { padding: 14px 14px 16px; }
+    .tabs button { font-size: 11px; padding: 11px 6px; }
+    input[type=text], input[type=email], textarea { font-size: 14px; }
+    .submit { min-height: 44px; font-size: 14px; }
   }
 
   /* ── Backdrop ──────────────────────────────────────────────────────────── */
@@ -508,8 +518,12 @@
     display: flex;
     gap: 10px;
     margin-top: 10px;
+    flex-wrap: wrap;
   }
-  .upload-cell { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .upload-cell { flex: 1 1 calc(50% - 10px); min-width: 120px; display: flex; flex-direction: column; gap: 3px; }
+  @media (max-width: 479px) {
+    .upload-cell { flex: 1 1 100%; }
+  }
   .upload-cell label { font-size: 11px; color: #666; margin: 0; }
 
   .file-btn {
@@ -667,9 +681,11 @@
     display: flex;
     gap: 6px;
     margin-bottom: 10px;
+    flex-wrap: wrap;
   }
   .toggle {
-    flex: 1;
+    flex: 1 1 calc(50% - 6px);
+    min-width: 100px;
     padding: 8px;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
@@ -680,6 +696,7 @@
     cursor: pointer;
     font-weight: 500;
     transition: all .15s;
+    min-height: 40px;
   }
   .toggle:hover { border-color: #4a90e2; color: #4a90e2; }
   .toggle.active { background: #e8f0fe; border-color: #4a90e2; color: #1a56c4; font-weight: 600; }
