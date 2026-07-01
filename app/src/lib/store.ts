@@ -1,5 +1,6 @@
 import { writable, get } from 'svelte/store';
 import type { AppState } from './types';
+import { makeRoomWallsAndOpenings } from './utils';
 
 export const ROOM_COLORS = ['#f0f0f5', '#f0f5f0', '#f5f0f0', '#f5f5e8', '#f0f5f5', '#f5f0f5'];
 
@@ -7,15 +8,18 @@ const savedFurnishings = (() => {
   try { return JSON.parse(localStorage.getItem('customFurnishings') || '[]'); } catch { return []; }
 })();
 
+const initialRoom = { id: 1, name: 'Room 1', x: 0, y: 0, w: 144, h: 120, color: ROOM_COLORS[0] };
+const { walls: initialWalls, openings: initialOpenings, nextNid: initialNid } = makeRoomWallsAndOpenings(initialRoom, 2);
+
 const initialState: AppState = {
   unit: 'ft',
-  rooms: [{ id: 1, name: 'Room 1', x: 0, y: 0, w: 144, h: 120, color: ROOM_COLORS[0] }],
+  rooms: [initialRoom],
   selRoomId: 1,
   roomPanelVisible: false,
-  walls: [],
+  walls: initialWalls,
   furnishings: savedFurnishings,
   placed: [],
-  openings: [],
+  openings: initialOpenings,
   mode: 'select',
   wverts: [],
   selId: null,
@@ -27,7 +31,8 @@ const initialState: AppState = {
   showGrid: true,
   drag: null,
   _mouseR: null,
-  _nid: 2,
+  _wallDragIdx: null,
+  _nid: initialNid,
 };
 
 export const appState = writable<AppState>(initialState);

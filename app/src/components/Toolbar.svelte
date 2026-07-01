@@ -66,7 +66,8 @@
     <button on:click={handleSave} title="Save project to URL">&#128190; Save</button>
   </div>
   {#if mode === 'wall'}
-    <div class="hotkeys">Left click: place point &nbsp;·&nbsp; Right click: finish</div>
+    <div class="hotkeys desktop-hint">Left click: place point &nbsp;·&nbsp; Right click: finish</div>
+    <div class="hotkeys mobile-hint">Tap: place point &nbsp;·&nbsp; Hold + drag a point: move it &nbsp;·&nbsp; Done/Cancel above</div>
   {/if}
   {#if savedUrl}
     <div class="url-row">
@@ -128,6 +129,7 @@
     padding: 0 4px 2px;
     white-space: nowrap;
   }
+  .mobile-hint { display: none; }
 
   .share-wrap {
     position: relative;
@@ -174,6 +176,8 @@
     }
     .url-row { flex-wrap: wrap; }
     .url-input { min-width: 0; flex: 1 1 120px; }
+    .desktop-hint { display: none; }
+    .mobile-hint { display: block; white-space: normal; }
   }
 
   @media (max-width: 479px) {

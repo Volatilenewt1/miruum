@@ -61,14 +61,14 @@
 
   @media (max-width: 767px) {
     .panel {
-      right: 0; left: 0; bottom: 0; top: auto;
-      width: 100%; max-width: 100%;
-      border-radius: 16px 16px 0 0;
-      border: none; border-top: 1px solid #e0e0e0;
-      box-shadow: 0 -4px 24px rgba(0,0,0,.15);
-      max-height: 62vh;
+      left: 12px; right: 12px; bottom: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); top: auto;
+      width: auto; max-width: none;
+      border-radius: 16px;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 8px 28px rgba(0,0,0,.18);
+      max-height: 62vh; max-height: min(62dvh, calc(100dvh - 24px));
       overflow-y: auto;
-      padding: 16px 16px 24px;
+      padding: 16px 16px 20px;
     }
     h4 { font-size: 15px; }
     button { min-height: 44px; }

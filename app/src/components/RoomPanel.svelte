@@ -41,27 +41,37 @@
     <label>Name</label>
     <input type="text" value={room.name} on:input={onName}>
 
-    {#if isFt}
-      <label>Width</label>
-      <div class="ftin-group">
-        <input type="number" bind:value={wFt} min="0" step="1" on:change={onSize}>
-        <span class="ftin-lbl">ft</span>
-        <input type="number" bind:value={wIn} min="0" max="11" step="1" on:change={onSize}>
-        <span class="ftin-lbl">in</span>
-      </div>
-      <label>Depth</label>
-      <div class="ftin-group">
-        <input type="number" bind:value={hFt} min="0" step="1" on:change={onSize}>
-        <span class="ftin-lbl">ft</span>
-        <input type="number" bind:value={hIn} min="0" max="11" step="1" on:change={onSize}>
-        <span class="ftin-lbl">in</span>
-      </div>
-    {:else}
-      <label>Width (m)</label>
-      <input type="number" bind:value={wM} step="0.01" min="0.1" on:change={onSize}>
-      <label>Depth (m)</label>
-      <input type="number" bind:value={hM} step="0.01" min="0.1" on:change={onSize}>
-    {/if}
+    <div class="r2">
+      {#if isFt}
+        <div>
+          <label>Width</label>
+          <div class="ftin-group">
+            <input type="number" bind:value={wFt} min="0" step="1" on:change={onSize}>
+            <span class="ftin-lbl">ft</span>
+            <input type="number" bind:value={wIn} min="0" max="11" step="1" on:change={onSize}>
+            <span class="ftin-lbl">in</span>
+          </div>
+        </div>
+        <div>
+          <label>Depth</label>
+          <div class="ftin-group">
+            <input type="number" bind:value={hFt} min="0" step="1" on:change={onSize}>
+            <span class="ftin-lbl">ft</span>
+            <input type="number" bind:value={hIn} min="0" max="11" step="1" on:change={onSize}>
+            <span class="ftin-lbl">in</span>
+          </div>
+        </div>
+      {:else}
+        <div>
+          <label>Width (m)</label>
+          <input type="number" bind:value={wM} step="0.01" min="0.1" on:change={onSize}>
+        </div>
+        <div>
+          <label>Depth (m)</label>
+          <input type="number" bind:value={hM} step="0.01" min="0.1" on:change={onSize}>
+        </div>
+      {/if}
+    </div>
 
     <label style="margin-top:8px">Color</label>
     <input type="color" value={room.color} on:change={onColor}>
@@ -86,14 +96,14 @@
 
   @media (max-width: 767px) {
     .panel {
-      right: 0; left: 0; bottom: 0; top: auto;
-      width: 100%; max-width: 100%;
-      border-radius: 16px 16px 0 0;
-      border: none; border-top: 1px solid #e0e0e0;
-      box-shadow: 0 -4px 24px rgba(0,0,0,.15);
-      max-height: 62vh;
+      left: 12px; right: 12px; bottom: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); top: auto;
+      width: auto; max-width: none;
+      border-radius: 16px;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 8px 28px rgba(0,0,0,.18);
+      max-height: 62vh; max-height: min(62dvh, calc(100dvh - 24px));
       overflow-y: auto;
-      padding: 16px 16px 24px;
+      padding: 16px 16px 20px;
     }
     h4 { font-size: 15px; }
     button { min-height: 44px; }
@@ -109,6 +119,7 @@
     font-size: 13px; background: #fafafa; color: #222; outline: none;
   }
   input[type=color] { padding: 2px 3px; height: 32px; cursor: pointer; width: 100%; border-radius: 6px; border: 1px solid #e0e0e0; }
+  .r2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
   .ftin-group {
     display: flex; align-items: center; gap: 4px;
     border: 1px solid #e0e0e0; border-radius: 6px;

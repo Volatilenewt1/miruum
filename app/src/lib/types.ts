@@ -121,6 +121,7 @@ export interface AppState {
   showGrid: boolean;
   drag: DragState | null;
   _mouseR: { x: number; y: number } | null;
+  _wallDragIdx: number | null;
   _nid: number;
 }
 

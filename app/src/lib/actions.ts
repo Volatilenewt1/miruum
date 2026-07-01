@@ -1,5 +1,5 @@
 import { appState, uid, ROOM_COLORS } from './store';
-import { snap, snapPt, toIn } from './utils';
+import { snap, snapPt, toIn, makeRoomWallsAndOpenings } from './utils';
 import type { AppState, ExtKey, Furnishing, ItemShape, OpeningType, PlacedItem } from './types';
 
 // ── Rooms ─────────────────────────────────────────────────────────────────────
@@ -9,7 +9,9 @@ export function addRoom(): void {
     const maxX = s.rooms.reduce((m, r) => Math.max(m, r.x + r.w), 0);
     const color = ROOM_COLORS[s.rooms.length % ROOM_COLORS.length];
     const room = { id: s._nid, name: `Room ${s.rooms.length + 1}`, x: maxX + 24, y: 0, w: 144, h: 120, color };
-    return { ...s, _nid: s._nid + 1, rooms: [...s.rooms, room],
+    const { walls, openings, nextNid } = makeRoomWallsAndOpenings(room, s._nid + 1);
+    return { ...s, _nid: nextNid, rooms: [...s.rooms, room],
+      walls: [...s.walls, ...walls], openings: [...s.openings, ...openings],
       selRoomId: room.id, selId: null, selWallId: null, selOId: null, roomPanelVisible: true };
   });
 }
@@ -52,7 +54,8 @@ export function applyRoomSize(wIn: number, hIn: number): void {
 // ── Walls ──────────────────────────────────────────────────────────────────────
 
 export function setMode(mode: 'select' | 'wall'): void {
-  appState.update(s => ({ ...s, mode, wverts: mode !== 'wall' ? [] : s.wverts }));
+  appState.update(s => ({ ...s, mode, wverts: mode !== 'wall' ? [] : s.wverts,
+    _wallDragIdx: mode !== 'wall' ? null : s._wallDragIdx }));
 }
 
 export function commitWalls(): void {
@@ -64,12 +67,12 @@ export function commitWalls(): void {
         x2: s.wverts[i + 1].x, y2: s.wverts[i + 1].y });
     }
     return { ...s, _nid: s._nid + newWalls.length,
-      walls: [...s.walls, ...newWalls], wverts: [] };
+      walls: [...s.walls, ...newWalls], wverts: [], _wallDragIdx: null };
   });
 }
 
 export function finishWall(): void { commitWalls(); setMode('select'); }
-export function cancelWall(): void { appState.update(s => ({ ...s, wverts: [], mode: 'select' })); }
+export function cancelWall(): void { appState.update(s => ({ ...s, wverts: [], mode: 'select', _wallDragIdx: null })); }
 
 export function selWall(id: number): void {
   appState.update(s => {

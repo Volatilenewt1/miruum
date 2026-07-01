@@ -1,5 +1,5 @@
 import { getState } from './store';
-import type { PlacedItem } from './types';
+import type { PlacedItem, Room, Wall, Opening } from './types';
 
 export function toIn(v: number): number {
   return getState().unit === 'm' ? v / 0.0254 : v * 12;
@@ -62,4 +62,23 @@ export function dToSeg(px: number, py: number, ax: number, ay: number, bx: numbe
   if (l2 === 0) return d2(px, py, ax, ay);
   const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l2));
   return d2(px, py, ax + t * dx, ay + t * dy);
+}
+
+// Auto-generates the 4 perimeter walls for a room plus a starter door
+// (bottom wall) and window (left wall), so a new room isn't a blank shell.
+export function makeRoomWallsAndOpenings(room: Room, nid: number): { walls: Wall[]; openings: Opening[]; nextNid: number } {
+  const { x, y, w, h, id: roomId } = room;
+  const walls: Wall[] = [
+    { id: nid,     roomId, x1: x,     y1: y,     x2: x + w, y2: y },       // top
+    { id: nid + 1, roomId, x1: x + w, y1: y,     x2: x + w, y2: y + h },   // right
+    { id: nid + 2, roomId, x1: x + w, y1: y + h, x2: x,     y2: y + h },   // bottom
+    { id: nid + 3, roomId, x1: x,     y1: y + h, x2: x,     y2: y },       // left
+  ];
+  const doorWidth = Math.min(36, w * 0.6);
+  const winWidth  = Math.min(36, h * 0.6);
+  const openings: Opening[] = [
+    { id: nid + 4, type: 'door', wallId: walls[2].id, t: 0.5, width: doorWidth, swing: 0 }, // bottom wall
+    { id: nid + 5, type: 'win',  wallId: walls[3].id, t: 0.5, width: winWidth },            // left wall
+  ];
+  return { walls, openings, nextNid: nid + 6 };
 }

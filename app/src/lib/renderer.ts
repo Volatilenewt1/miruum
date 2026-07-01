@@ -165,10 +165,11 @@ function drawWallPrev(): void {
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
   }
   ctx.setLineDash([]);
-  ctx.fillStyle = '#4a90e2';
-  s.wverts.forEach(v => {
+  s.wverts.forEach((v, i) => {
     const p = ts(v.x, v.y);
-    ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
+    const dragging = i === s._wallDragIdx;
+    ctx.fillStyle = dragging ? '#e2974a' : '#4a90e2';
+    ctx.beginPath(); ctx.arc(p.x, p.y, dragging ? 8 : 5, 0, Math.PI * 2); ctx.fill();
   });
   ctx.restore();
 }
