@@ -5,11 +5,14 @@
   import { ts, tr, snap, snapPt, d2 } from '../lib/utils';
   import { hitItem, hitHandles, hitWall, hitWallEndpoint, hitOpening, hitRoom, anyCollide, anyRoomCollide } from '../lib/physics';
   import { selItem, selWall, selOpening, selRoom, desel, commitWalls, setMode, fitRoom,
-           delSelected, applyRot } from '../lib/actions';
+           delSelected, delSelWall, delSelOpening, duplicatePlaced, applyRot } from '../lib/actions';
+  import type { PlacedItem } from '../lib/types';
 
   let canvas: HTMLCanvasElement;
   let wrapper: HTMLDivElement;
   let hint = '';
+
+  let clipboard: PlacedItem | null = null;
 
   let panning = false;
   let panStart = { x: 0, y: 0 };
@@ -50,11 +53,76 @@
   function onKeydown(e: KeyboardEvent): void {
     const tag = (document.activeElement as HTMLElement)?.tagName;
     const s = $appState;
-    if (e.key === 'Escape') { s.mode === 'wall' ? cancelWall() : desel(); }
-    if ((e.key === 'Delete' || e.key === 'Backspace') && tag !== 'INPUT') { delSelected(); }
-    if ((e.key === 'r' || e.key === 'R') && tag !== 'INPUT' && s.selId) {
+
+    if (e.key === 'Escape') { s.mode === 'wall' ? cancelWall() : desel(); return; }
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (s.selId !== null) delSelected();
+      else if (s.selWallId !== null) delSelWall();
+      else if (s.selOId !== null) delSelOpening();
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+      e.preventDefault();
+      clipboard = s.selId !== null ? ({ ...s.placed.find(p => p.id === s.selId)! }) : null;
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+      e.preventDefault();
+      const item = s.selId !== null ? s.placed.find(p => p.id === s.selId) : null;
+      if (item) { clipboard = { ...item }; delSelected(); }
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+      e.preventDefault();
+      if (!clipboard) return;
+      const src = clipboard;
+      appState.update(st => {
+        const nx = snap(src.x + 12), ny = snap(src.y + 12);
+        const copy: PlacedItem = { ...src, id: st._nid, x: nx, y: ny, _lx: nx, _ly: ny };
+        return { ...st, _nid: st._nid + 1, placed: [...st.placed, copy], selId: copy.id, selWallId: null, selOId: null };
+      });
+      clipboard = { ...clipboard, x: snap(clipboard.x + 12), y: snap(clipboard.y + 12) };
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+      e.preventDefault();
+      if (s.selId !== null) duplicatePlaced(s.selId);
+      return;
+    }
+
+    if ((e.key === 'r' || e.key === 'R') && s.selId) {
       const item = s.placed.find(p => p.id === s.selId);
-      if (item) { applyRot((item.rot + 90) % 360); }
+      if (item) applyRot((item.rot + 90) % 360);
+      return;
+    }
+
+    if (e.key === 'f' || e.key === 'F') {
+      fitRoom(canvas.width, canvas.height);
+      return;
+    }
+
+    if (e.key === 'w' || e.key === 'W') {
+      setMode(s.mode === 'wall' ? 'select' : 'wall');
+      return;
+    }
+
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      if (s.selId === null) return;
+      e.preventDefault();
+      const step = e.shiftKey ? 1 : 6;
+      const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+      const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+      appState.update(st => ({
+        ...st, placed: st.placed.map(p => p.id !== s.selId ? p
+          : { ...p, x: p.x + dx, y: p.y + dy, _lx: p.x + dx, _ly: p.y + dy }),
+      }));
+      return;
     }
   }
 
