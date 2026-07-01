@@ -1,3 +1,4 @@
+import { deflateSync, inflateSync, strToU8, strFromU8 } from 'fflate';
 import { getState } from './store';
 import { getCanvas, renderClean } from './renderer';
 import { loadState } from './actions';
@@ -162,14 +163,24 @@ export function exportInstagramStory(): void {
 }
 
 function encodeState(data: object): string {
-  const json = JSON.stringify(data);
-  return btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode(parseInt(p1, 16))));
+  const compressed = deflateSync(strToU8(JSON.stringify(data)), { level: 9 });
+  let binary = '';
+  for (let i = 0; i < compressed.length; i++) binary += String.fromCharCode(compressed[i]);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
 function decodeState(encoded: string): unknown {
-  return JSON.parse(decodeURIComponent(
-    Array.prototype.map.call(atob(encoded), (c: string) => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
-  ));
+  try {
+    const binary = atob(encoded.replace(/-/g, '+').replace(/_/g, '/'));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return JSON.parse(strFromU8(inflateSync(bytes)));
+  } catch {
+    // Fall back to old uncompressed format
+    return JSON.parse(decodeURIComponent(
+      Array.prototype.map.call(atob(encoded), (c: string) => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
+    ));
+  }
 }
 
 export function saveURL(): string {
